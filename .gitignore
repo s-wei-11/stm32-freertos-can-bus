@@ -1,0 +1,71 @@
+# ==========================================
+# 1. 编译输出与构建目录
+# ==========================================
+build/
+debug/
+release/
+bin/
+obj/
+out/
+
+# 嵌入式底层二进制与中间件兜底 (防漏网之鱼)
+*.elf
+*.bin
+*.hex
+*.axf
+*.map
+*.o
+*.obj
+*.d
+*.crf
+
+# ==========================================
+# 2. CMake 过程文件
+# ==========================================
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CMakePresets.json.user
+CTestTestfile.cmake
+
+# ==========================================
+# 3. 编辑器与 IDE 个人配置
+# ==========================================
+# VS Code (避免机器绝对路径污染)
+.vscode/
+.history/
+*.log
+
+# Keil MDK (核心避坑：绝不能传窗口布局与缓存)
+*.uvopt
+*.uvoptx
+*.uvgui.*
+*.uvguix.*
+*.dep
+*.bak
+*.saved_uv4
+Listings/
+Objects/
+
+# IAR / STM32CubeIDE 缓存
+.metadata/
+.settings/
+*.launch
+*.administrator
+
+# ==========================================
+# 4. 操作系统临时杂质
+# ==========================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*$*
+
+# ==========================================
+# 5. 白名单保证 (确保关键工程文件不被误杀)
+# ==========================================
+!*.ioc
+!CMakeLists.txt
