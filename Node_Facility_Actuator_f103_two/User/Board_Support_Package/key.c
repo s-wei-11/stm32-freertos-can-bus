@@ -4,8 +4,8 @@
 #include "stm32f1xx_hal_gpio.h"
 #include <stdint.h>
 
-
-key_t key_device[key_count]={{GPIOB,GPIO_PIN_13,NULL,1,1},{GPIOB,GPIO_PIN_14,NULL,1,1},{GPIOB,GPIO_PIN_15,NULL,1,1}};   //给按键初始化
+//顺序为 按键1-2-3
+key_t key_device[key_count]={{GPIOB,GPIO_PIN_13,NULL,1,1},{GPIOB,GPIO_PIN_14,NULL,1,1},{GPIOB,GPIO_PIN_15,NULL,1,1}};   //给按键初始化  
 
 void key_attach_callback(key_t * dev,key_callback function)
 {
@@ -26,6 +26,7 @@ void keyscan()
     {
         uint32_t now_time=HAL_GetTick();
 
+        key_device[i].key_id    =   i;  //看当前是哪一个按键
         key_device[i].state=HAL_GPIO_ReadPin(key_device[i].port, key_device[i].pin);
         if(key_device[i].state == 0 && key_device[i].last_state == 1)   //下降沿
         {
@@ -39,7 +40,7 @@ void keyscan()
             {
                 key_device[i].key_lock=0;   //上锁
                 key_device[i].pre_record=0;
-                notify_event(&key_device[i], long_press);
+                notify_event(&key_device[i], long_press);   //长按触发一次
             }
         }
         if(key_device[i].state == 1 && key_device[i].last_state == 0)
@@ -48,7 +49,7 @@ void keyscan()
         } 
         if(key_device[i].state == 1 && key_device[i].last_state == 1) 
         {
-            if (now_time-key_device[i].release_tim >= 200 && key_device[i].pre_record>=1) {
+            if (now_time-key_device[i].release_tim >= 210 && key_device[i].pre_record>=1) {
                 switch (key_device[i].pre_record) {
                     case 1 : 
                         notify_event(&key_device[i], single_click);

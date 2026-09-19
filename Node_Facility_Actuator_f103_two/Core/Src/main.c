@@ -18,17 +18,18 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os.h"786
 #include "adc.h"
 #include "can.h"
 #include "dma.h"
+#include "i2c.h"
 #include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_display.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,7 +99,12 @@ int main(void)
   MX_USART1_UART_Init();
   MX_SPI1_Init();
   MX_ADC2_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
+
+//代码初始化的地方！！！
+app_init();
+
 
   /* USER CODE END 2 */
 

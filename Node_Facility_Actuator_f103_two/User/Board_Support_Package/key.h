@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stm32f1xx.h"
+#include <stdint.h>
 
 
 #define key_count 3
@@ -24,7 +25,7 @@ typedef void (*key_callback) (key_t * dev,key_events event) ;   //定义之后�
 struct key_t {
 
     GPIO_TypeDef * port;
-    uint32_t       pin;
+    uint16_t       pin;
 
     key_callback   callback;    //回调函数-用于处理业务
 
@@ -36,4 +37,11 @@ struct key_t {
     uint8_t        pre_record;  //连击记录 
     uint8_t        key_lock;
 
+    uint8_t        key_id;  //记录当前按键编号
 };
+
+extern key_t key_device[key_count];     //将按键对象对外声明
+
+void keyscan(void); //按键扫描
+void key_attach_callback(key_t * dev,key_callback function);    //绑定函数业务处理
+
