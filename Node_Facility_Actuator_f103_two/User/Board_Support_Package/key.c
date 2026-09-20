@@ -49,7 +49,7 @@ void keyscan()
         } 
         if(key_device[i].state == 1 && key_device[i].last_state == 1) 
         {
-            if (now_time-key_device[i].release_tim >= 210 && key_device[i].pre_record>=1) {
+            if (now_time-key_device[i].release_tim >= 250 && key_device[i].pre_record>=1) {
                 switch (key_device[i].pre_record) {
                     case 1 : 
                         notify_event(&key_device[i], single_click);

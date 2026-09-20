@@ -1,6 +1,14 @@
 #include "uart_app.h"
 
+#include "cmsis_os2.h"
+
+#include "FreeRtos.h"
+#include "stm32f103xb.h"
+#include "stm32f1xx_hal_adc.h"
+#include "task.h"
+
 #include "string.h"
+#include "usart.h"
 
 #include <machine/endian.h>
 #include <stdint.h>
@@ -69,7 +77,9 @@ void ringbuf_init(ubuf_t * obj,uint8_t *rx_pool,uint16_t size)
     obj->p_head=0;
     obj->p_tail=0;
     obj->uart_buffer = rx_pool;
-    obj->ubuf_size  =  size;        //算有多少字】=
+    obj->ubuf_size  =  size;        //算有多少字
+
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);    //开启空闲中断
 
     HAL_UART_Receive_DMA(huart_x,obj->uart_buffer,obj->ubuf_size);
 }
@@ -121,6 +131,7 @@ void packet_send(UART_HandleTypeDef *huart, const uint8_t *p_data, uint8_t len)
         chksum += p_data[i];
     }
     HAL_UART_Transmit(huart, &chksum, 1, 10);
+
 }
  
 /**
@@ -197,22 +208,27 @@ bool parse_byte(uint8_t byte, realData_t * out_pkt)
 
 
 
+//extern osThreadId_t Data_Acquire_TaskHandle; // 你的采集任务句柄
+
+uint8_t notify_idle_flag = 0;
 void USART1_IRQHandler(void)
 {
     if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE) != RESET)
     {
-     //  __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+       __HAL_UART_CLEAR_IDLEFLAG(&huart1);  //清除空闲标志位
 
-        /*
-         * 这里只负责：
-         * 1. 判断 IDLE
-         * 2. 清除 IDLE
-         * 3. 计算/记录新收到的数据
-         * 4. 通知主循环或任务
-         */
+        notify_idle_flag=1;
+
+       // 仅作为门铃：唤醒休眠中的任务，不在中断里做任何耗时处理
+        // if (Data_Acquire_TaskHandle != NULL) {
+        //     vTaskNotifyGiveFromISR((TaskHandle_t)Data_Acquire_TaskHandle, NULL);
+        // }
         // printf("空闲触发一次\r\n");
     }
 
     HAL_UART_IRQHandler(&huart1);
 }
+
+
+
 

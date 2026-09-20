@@ -12,7 +12,7 @@
 //#define ubuf_size   512
 //#define ubuf_temp   128
 
-
+//接收载体的数据宽度
 #define realData_scale 16   //所有buf size 大小应为2的整数次幂
 
 //包头 可自定义修改
@@ -46,8 +46,13 @@ typedef struct{
 }realData_t;
 
 
-//循环模式dma 不处理粘包
+
+extern uint8_t notify_idle_flag;    //空闲中断通知标志位
+
+//DMA初始化
 void ringbuf_init(ubuf_t * obj,uint8_t *rx_pool,uint16_t size);
+
+//循环模式dma 不处理粘包
 bool ringbuf_pop(ubuf_t * obj,uint8_t * rx_data);
 
 //循环模式 处理粘包 parse_byte时 需要传入 realData结构体用于接收数据

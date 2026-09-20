@@ -52,12 +52,19 @@ osThreadId_t APP_TASKHandle;
 const osThreadAttr_t APP_TASK_attributes = {
   .name = "APP_TASK",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for Acquire_Task */
 osThreadId_t Acquire_TaskHandle;
 const osThreadAttr_t Acquire_Task_attributes = {
   .name = "Acquire_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for Data_handle */
+osThreadId_t Data_handleHandle;
+const osThreadAttr_t Data_handle_attributes = {
+  .name = "Data_handle",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
@@ -74,6 +81,7 @@ const osMessageQueueAttr_t Button_Queue_attributes = {
 
 void App_Show_Task(void *argument);
 void Data_Acquire_Task(void *argument);
+void Deal_data(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -113,6 +121,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Acquire_Task */
   Acquire_TaskHandle = osThreadNew(Data_Acquire_Task, NULL, &Acquire_Task_attributes);
+
+  /* creation of Data_handle */
+  Data_handleHandle = osThreadNew(Deal_data, NULL, &Data_handle_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -158,6 +169,24 @@ __weak void Data_Acquire_Task(void *argument)
     osDelay(1);
   }
   /* USER CODE END Data_Acquire_Task */
+}
+
+/* USER CODE BEGIN Header_Deal_data */
+/**
+* @brief Function implementing the Data_handle thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Deal_data */
+__weak void Deal_data(void *argument)
+{
+  /* USER CODE BEGIN Deal_data */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END Deal_data */
 }
 
 /* Private application code --------------------------------------------------*/
