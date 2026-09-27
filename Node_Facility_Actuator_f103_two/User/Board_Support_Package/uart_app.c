@@ -3,14 +3,12 @@
 #include "cmsis_os2.h"
 
 #include "FreeRtos.h"
-#include "stm32f103xb.h"
-#include "stm32f1xx_hal_adc.h"
+
 #include "task.h"
 
 #include "string.h"
 #include "usart.h"
 
-#include <machine/endian.h>
 #include <stdint.h>
 #include <stdio.h>
 

@@ -54,11 +54,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, LED_Pin|LEDC15_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, stepper_motorl_Pin|stepper_motorlA1_Pin|stepper_motorlA2_Pin|stepper_motorlA3_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, stepper_motorl_Pin|stepper_motorlA1_Pin|stepper_motorlA2_Pin|stepper_motorlA3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, CSB_ECH_Pin|CSB_TRIG_Pin|LCD_RES_Pin|LCD_DC_Pin
-                          |LCD_CS_Pin|LCD_BLK_Pin|DS18B20_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LCD_BLK_Pin|DS18B20_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LED_Pin LEDC15_Pin */
   GPIO_InitStruct.Pin = LED_Pin|LEDC15_Pin;
@@ -71,8 +70,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = stepper_motorl_Pin|stepper_motorlA1_Pin|stepper_motorlA2_Pin|stepper_motorlA3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : RAIN_CHECK_Pin */
+  GPIO_InitStruct.Pin = RAIN_CHECK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(RAIN_CHECK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BUTTON_Pin BUTTONB14_Pin BUTTONB15_Pin */
   GPIO_InitStruct.Pin = BUTTON_Pin|BUTTONB14_Pin|BUTTONB15_Pin;
@@ -80,14 +85,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : CSB_ECH_Pin CSB_TRIG_Pin LCD_RES_Pin LCD_DC_Pin
-                           LCD_CS_Pin LCD_BLK_Pin */
-  GPIO_InitStruct.Pin = CSB_ECH_Pin|CSB_TRIG_Pin|LCD_RES_Pin|LCD_DC_Pin
-                          |LCD_CS_Pin|LCD_BLK_Pin;
+  /*Configure GPIO pin : LCD_BLK_Pin */
+  GPIO_InitStruct.Pin = LCD_BLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(LCD_BLK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : DS18B20_Pin */
   GPIO_InitStruct.Pin = DS18B20_Pin;

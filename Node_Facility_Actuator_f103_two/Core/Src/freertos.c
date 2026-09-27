@@ -51,21 +51,28 @@
 osThreadId_t APP_TASKHandle;
 const osThreadAttr_t APP_TASK_attributes = {
   .name = "APP_TASK",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for Acquire_Task */
 osThreadId_t Acquire_TaskHandle;
 const osThreadAttr_t Acquire_Task_attributes = {
   .name = "Acquire_Task",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for Data_handle */
 osThreadId_t Data_handleHandle;
 const osThreadAttr_t Data_handle_attributes = {
   .name = "Data_handle",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for Device */
+osThreadId_t DeviceHandle;
+const osThreadAttr_t Device_attributes = {
+  .name = "Device",
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for Button_Queue */
@@ -82,6 +89,7 @@ const osMessageQueueAttr_t Button_Queue_attributes = {
 void App_Show_Task(void *argument);
 void Data_Acquire_Task(void *argument);
 void Deal_data(void *argument);
+void device_control(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -124,6 +132,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Data_handle */
   Data_handleHandle = osThreadNew(Deal_data, NULL, &Data_handle_attributes);
+
+  /* creation of Device */
+  DeviceHandle = osThreadNew(device_control, NULL, &Device_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -187,6 +198,24 @@ __weak void Deal_data(void *argument)
     osDelay(1);
   }
   /* USER CODE END Deal_data */
+}
+
+/* USER CODE BEGIN Header_device_control */
+/**
+* @brief Function implementing the Device thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_device_control */
+__weak void device_control(void *argument)
+{
+  /* USER CODE BEGIN device_control */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END device_control */
 }
 
 /* Private application code --------------------------------------------------*/
