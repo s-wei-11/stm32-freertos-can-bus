@@ -55,6 +55,9 @@ DMA循环模式 不处理粘包 则初始化一下后 直接在主循环里面�
 
 
 //重定向printf
+/*
+阻塞发送靠“等发送完成再释放锁”保证串行；DMA发送靠“异步完成通知 + 发送状态/队列”保证串行；如果阻塞发送自己提前超时，也可能在发送真正完成前释放锁，因此同样需要谨慎处理
+*/
 int _write(int file,char *ptr , int len)
 {
     HAL_UART_Transmit(huart_x, (uint8_t *)ptr,len,HAL_MAX_DELAY );

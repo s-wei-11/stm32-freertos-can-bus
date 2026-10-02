@@ -98,6 +98,7 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_SDIO_SD_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

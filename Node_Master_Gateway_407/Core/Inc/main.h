@@ -57,8 +57,20 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ECODER_Pin GPIO_PIN_4
+#define ECODER_GPIO_Port GPIOE
+#define ECODERE5_Pin GPIO_PIN_5
+#define ECODERE5_GPIO_Port GPIOE
+#define ECODERE6_Pin GPIO_PIN_6
+#define ECODERE6_GPIO_Port GPIOE
 #define fmq_Pin GPIO_PIN_13
 #define fmq_GPIO_Port GPIOC
+#define DS1302_CLK_Pin GPIO_PIN_4
+#define DS1302_CLK_GPIO_Port GPIOA
+#define DS1302_SDA_Pin GPIO_PIN_5
+#define DS1302_SDA_GPIO_Port GPIOA
+#define DS1302_RST_Pin GPIO_PIN_6
+#define DS1302_RST_GPIO_Port GPIOA
 #define led_Pin GPIO_PIN_8
 #define led_GPIO_Port GPIOE
 #define ledE10_Pin GPIO_PIN_10
@@ -75,14 +87,6 @@ void Error_Handler(void);
 #define LCD_RES_GPIO_Port GPIOD
 #define SD_Pin GPIO_PIN_3
 #define SD_GPIO_Port GPIOD
-#define BUTTON_Pin GPIO_PIN_4
-#define BUTTON_GPIO_Port GPIOD
-#define BUTTOND5_Pin GPIO_PIN_5
-#define BUTTOND5_GPIO_Port GPIOD
-#define BUTTOND6_Pin GPIO_PIN_6
-#define BUTTOND6_GPIO_Port GPIOD
-#define BUTTOND7_Pin GPIO_PIN_7
-#define BUTTOND7_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
