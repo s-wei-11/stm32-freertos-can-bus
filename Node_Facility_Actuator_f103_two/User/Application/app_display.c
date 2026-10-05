@@ -85,12 +85,12 @@ void app_init(void)
     uint16_t pins[4] = {GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_2,GPIO_PIN_3};   //定义四个引脚
     extern Stepper_28BYJ48_t g_motor;
     Stepper_Init(&g_motor, ports, pins);    //进行初始化绑定
-
+    
     // 节点 2 设备初始化
     node2_device_init();
 
     //步进电机初始化
-   // Stepper_Zero_Calibrate();
+   Stepper_Zero_Calibrate();
 
 
 }
@@ -131,7 +131,7 @@ void Data_Acquire_Task(void *argument)
     node2_state_update(&node2_state);//温度更新
     node2_apply_outputs();    // 根据当前天气和温度等级，计算并应用执行器输出
     
-    if(node2_state.rain_state != last_rain_state  && last_rain_state == false) //检测下雨状态变化
+    if(node2_state.rain_state != last_rain_state  ) //检测下雨状态变化
     {
         //通过任务通知打断电机
         xTaskNotify((TaskHandle_t)DeviceHandle, MOTOR_SIG_ABORT_TO_ZERO, eSetBits);
@@ -157,10 +157,10 @@ void Deal_data(void *argument)
   sys_log_init();
     if(DS18B20_Init(&ds18b20_one, GPIOB, GPIO_PIN_9))
     {
-        printf("初始化成功!!");
+       safe_printf("初始化成功!!");
     }
     else {
-        printf("failure ");
+        safe_printf("failure ");
         
     }
   /* Infinite loop */
@@ -201,14 +201,15 @@ void device_control(void *argument)
 uint32_t notify_value = 0;  //默认等于 0，表示没有通知
   for(;;)
   {
-       if(xTaskNotifyWait(0, MOTOR_SIG_START_MOVE, &notify_value, portMAX_DELAY)==pdTRUE) //并消除原本的通知位  再任务没有通知的时候 挂起
-       {
-          if(notify_value & MOTOR_SIG_START_MOVE)
+    //每次等待前 清除历史遗留 一直等待 等到后再次清除之前等待的值
+      if(xTaskNotifyWait(0xffffffff, MOTOR_SIG_START_MOVE|MOTOR_SIG_ABORT_TO_ZERO, &notify_value, portMAX_DELAY)==pdTRUE) 
+      {
+          if(notify_value & MOTOR_SIG_START_MOVE || notify_value & MOTOR_SIG_ABORT_TO_ZERO)
           {
               // 处理启动电机通知
-                Stepper_Louver_Control(node2_state.louver_target_percent);
+                Stepper_Louver_Control(&node2_state);
           }
-       }//有了这个事件来驱动 就不用再使用 osDelay 
+      }//有了这个事件来驱动 就不用再使用 osDelay 
   }
   /* USER CODE END device_control */
 }

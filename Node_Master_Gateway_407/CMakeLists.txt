@@ -42,14 +42,22 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
+file(GLOB User1 CONFIGURE_DEPENDS "User/Application/*.c")
+file(GLOB User2 CONFIGURE_DEPENDS "User/Board_Support_Package/*.c")
+
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    ${User1}
+    ${User2}
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    User/Application
+    User/Board_Support_Package
+    
 )
 
 # Add project symbols (macros)

@@ -9,7 +9,7 @@
 
 typedef enum {
     STEPPER_DIR_CW  =  1, // 顺时针正转
-    STEPPER_DIR_CCW = -1  // 逆时针反转
+    STEPPER_DIR_CCW =  0  // 逆时针反转
 } Stepper_Dir_t;
 
 /**

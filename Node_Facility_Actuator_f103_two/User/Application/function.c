@@ -60,25 +60,6 @@ void node2_device_init()
 
 
 
-void stepper_control()
-{
-   uint16_t  step = (uint16_t )Stepper_AngleToSteps(90);
-
-    if(rain_check)
-    {
-        Stepper_PowerOff(&g_motor);
-    }
-    else 
-    {
-        for(uint16_t k=0;k<step;k++)
-        {
-            Stepper_Step(&g_motor,STEPPER_DIR_CW);
-             HAL_Delay(4);
-          
-        }
-         Stepper_PowerOff(&g_motor);//转完停
-    }
-}
 
 
 
@@ -275,25 +256,25 @@ void get_temp(node2_total_state * dev,Ds18bxx_t * ds18b20_t)
                 fail_count=0;    //成功就清除
                 dev->current_temp=(uint16_t)(current_temperature*10);   //数值扩大10倍  存入总状态里面去
                 // 将 current_temperature 打包发送至 CAN 报文队列
-                printf("Current temperature: %.1f°C\r\n", current_temperature);
+                safe_printf("Current temperature: %.1f°C\r\n", current_temperature);
         }
         else
         {
                 fail_count++;
-                printf("[Sensor Warning] Read scratchpad failed (count: %d)\r\n", fail_count);
+                safe_printf("[Sensor Warning] Read scratchpad failed (count: %d)\r\n", fail_count);
         }
         
         if(fail_count>=3)
         {
             fail_count++;
-            printf("[Sensor Error] Failed to read temperature after 3 attempts\r\n");
+            safe_printf("[Sensor Error] Failed to read temperature after 3 attempts\r\n");
         }
     }
 }
 
 // 假设百叶窗从 0% (全关) 到 100% (全开) 对应转动 360 度
 // 直接复用你驱动里的 Stepper_AngleToSteps 计算 360 度的总步数
-#define LOUVER_FULL_OPEN_STEPS   ((uint16_t)Stepper_AngleToSteps(360))
+#define LOUVER_FULL_OPEN_STEPS   ((uint16_t)Stepper_AngleToSteps(180))
 
 /**
  * @brief 步进电机开机物理归零校准
@@ -307,7 +288,7 @@ void Stepper_Zero_Calibrate(void)
     for (uint16_t i = 0; i < full_steps; i++)
     {
         Stepper_Step(&g_motor, STEPPER_DIR_CCW); // CCW 反转为关窗[cite: 4]
-        HAL_Delay(3); // 此时 OS 还没启动，可以使用裸机死等延时
+        HAL_Delay(5); // 此时 OS 还没启动，可以使用裸机死等延时
     }
 
     // 碰到底部贴死后，断电释放线圈，防止电机堵转发热[cite: 4]
@@ -322,66 +303,54 @@ void Stepper_Zero_Calibrate(void)
  * @param  target_percent: 目标开度百分比 (0, 30, 70, 100)
  * @note   在 FreeRTOS 任务中周期调用，只在目标发生变化时才驱动电机
  */
-void Stepper_Louver_Control(uint8_t target_percent)
+void Stepper_Louver_Control(node2_total_state *obj)
 {
-    static uint8_t s_current_percent = 0  ;             //始终记住当前开度百分比，初始为0 
+    
+     if(obj->louver_target_percent > 100) obj->louver_target_percent = 100; //最高100开度
+     if(obj->louver_target_percent == obj->louver_current_percent) return; //如果目标开度和当前开度相同就不执行
 
-    if (target_percent > 100) target_percent = 100;
-    if (target_percent == s_current_percent) return;            //达到目标开度，直接返回
+    //按照百分比计算要走步数
+    static uint16_t step_position =0;  //记录当前步数位置 初始为0
+    uint8_t direction = (obj->louver_target_percent > obj->louver_current_percent) ? STEPPER_DIR_CW : STEPPER_DIR_CCW; //确定方向
+    uint16_t target_steps =  abs((int)((obj->louver_target_percent * LOUVER_FULL_OPEN_STEPS) / 100)-(int)step_position);  //计算目标步数 根据当前开度度减去目标开度 然后再减去历史步数
+        // 【调试打印】看走多少步
+    safe_printf("[Motor] Cur:%d%% -> Target:%d%%, Moving Steps:%d\r\n", 
+           obj->louver_current_percent, obj->louver_target_percent, target_steps);
 
-    int16_t diff_percent = (int16_t)target_percent - (int16_t)s_current_percent;    //计算目标开度与当前开度的差值
-    uint16_t steps_to_move = (abs(diff_percent) * LOUVER_FULL_OPEN_STEPS) / 100;    //计算需要移动的步数
-
-    uint8_t direction = (diff_percent > 0) ? STEPPER_DIR_CW : STEPPER_DIR_CCW;  // 根据差值正负确定电机转动方向
-    // 【调试打印】看走多少步
-    printf("[Motor] Cur:%d%% -> Target:%d%%, Moving Steps:%d\r\n", 
-           s_current_percent, target_percent, steps_to_move);
-
-    static uint16_t steps_moved = 0;  // 记录已经移动的步数     第一次初始化的时候为0
-
-
-    // 清除上一次的中止通知标志，防止误触发【避免本该关窗的时候残留的雨天信号影响当前状态】
-    ulTaskNotifyValueClear(NULL, MOTOR_SIG_ABORT_TO_ZERO);     //不清楚pending状态 
-    for(uint16_t i = 0; i < steps_to_move; i++)     //开始走步
+    ulTaskNotifyValueClear(NULL, MOTOR_SIG_ABORT_TO_ZERO);     //清除上一次的中止通知标志，防止误触发【避免本该关窗的时候残留的雨天信号影响当前状态】
+    for(uint16_t i = 0; i < target_steps; i++)
     {
-        
         uint32_t notify_value = 0;  //默认等于 0，表示没有通知
         if(xTaskNotifyWait(0, MOTOR_SIG_ABORT_TO_ZERO, &notify_value, 0) == pdTRUE)  //接收是否成功  参数四的0代表不进行阻塞等待
         {
             if(notify_value & MOTOR_SIG_ABORT_TO_ZERO)  // 检查是否收到中止通知
             {
-                printf("[motor]:中途有雨 开始关窗 需往回走%d步\r\n", steps_moved);
-                while(steps_moved > 0)
+                safe_printf("[motor]:中途有雨 开始关窗 需往回走%d步\r\n", step_position);
+                while(step_position > 0)
                 {
                     Stepper_Step(&g_motor, STEPPER_DIR_CCW); // 关窗方向
-                    vTaskDelay(pdMS_TO_TICKS(3));
-                    steps_moved--;  //执行一次减一次
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    step_position--;  //执行一次减一次
                 }
                 Stepper_PowerOff(&g_motor);  // 关窗到位后断电释放
-                s_current_percent = 0;      // 重置开度百分比
-                node2_state.louver_current_percent = s_current_percent; // 同步全局状态
+                obj->louver_current_percent = 0; // 重置开度百分比
                 return;  // 中止流程，直接返回
             }
         }
+        Stepper_Step(&g_motor, direction);
         if(direction == STEPPER_DIR_CW)
         {
-            steps_moved++;  
+            step_position++;  
         }
         else if(direction == STEPPER_DIR_CCW)
         {
-            if(steps_moved > 0)steps_moved--;
+            if(step_position > 0)step_position--;
         }
-        Stepper_Step(&g_motor, direction);
-        vTaskDelay(pdMS_TO_TICKS(18)); 
+        vTaskDelay(pdMS_TO_TICKS(5)); //延时18ms
     }
-    // 转到位后断电释放
-    Stepper_PowerOff(&g_motor);
-
-    s_current_percent = target_percent;
-    node2_state.louver_current_percent = s_current_percent;
+    Stepper_PowerOff(&g_motor);  // 转到位后断电释放
+    obj->louver_current_percent = obj->louver_target_percent; //更新当前开度百分比
 }
-
-
 
 //定义静态全局变量互斥锁 
 static SemaphoreHandle_t uart_mutex = NULL; 

@@ -83,7 +83,7 @@ void node2_state_update(node2_total_state * dev);   //温度状态更新
 #define MOTOR_SIG_START_MOVE      (1UL << 1)            // Bit 1: 目标开度更新，唤醒电机干活
 
 
-void Stepper_Louver_Control(uint8_t target_percent); //步进电机控制执行
+void Stepper_Louver_Control(node2_total_state *obj); //步进电机控制执行
 void Stepper_Zero_Calibrate(void);  //步进电机初始化
 void get_temp(node2_total_state * dev,Ds18bxx_t * ds18b20_t);
 

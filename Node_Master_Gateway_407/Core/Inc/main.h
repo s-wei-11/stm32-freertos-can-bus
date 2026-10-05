@@ -85,8 +85,8 @@ void Error_Handler(void);
 #define LCD_DC_GPIO_Port GPIOD
 #define LCD_RES_Pin GPIO_PIN_10
 #define LCD_RES_GPIO_Port GPIOD
-#define SD_Pin GPIO_PIN_3
-#define SD_GPIO_Port GPIOD
+#define SD_check_Pin GPIO_PIN_3
+#define SD_check_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
