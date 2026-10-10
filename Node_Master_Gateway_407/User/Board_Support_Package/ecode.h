@@ -4,8 +4,13 @@
 //封装引脚
 
 
+/*
+    本设计使用定时器进行2ms消抖扫描
+*/
 
-
+#define lpress_time 500    //长按时间判定
+// #define spress_time 500    //短按判定
+#define multi_click_t 200   //连击判定的时间
 
 //用来返回编码器状态
 typedef enum{
@@ -57,8 +62,7 @@ struct ecode_dev{
 
 
 
-
 void ecode_init(ecode_dev * dev,GPIO_TypeDef * port_a,uint16_t pin_a,GPIO_TypeDef * port_b,\
                 uint16_t pin_b,GPIO_TypeDef * port_d,uint16_t pin_d);
 ecode_state ecode_getstate(ecode_dev * dev);
-void register_ecode_callback(ecode_dev * dev,ecode_callback callback);
+void register_ecode_callback(ecode_dev * dev,ecode_callback callback);  //回调函数单独绑定

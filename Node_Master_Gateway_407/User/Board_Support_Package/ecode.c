@@ -1,6 +1,7 @@
 #include "ecode.h"
 #include <stdint.h>
-
+#include "FreeRTOS.h"
+#include "task.h"
 
 //由于初始化时 默认弱上拉
 /*
@@ -84,7 +85,12 @@ ecode_state ecode_getstate(ecode_dev * dev)
     uint8_t pin_a=read_A(dev);
     uint8_t pin_b=read_B(dev);
     uint8_t pin_d=read_D(dev);
-    uint32_t now_time=HAL_GetTick();    //进入时统一获取当下时间
+    static  uint32_t now_time=0;    //通过中断来记录时间 与时基解耦
+    now_time +=2;
+    //  uint32_t now_time=HAL_GetTick();    //进入时统一获取当下时间
+    //  TickType_t now_tick =xTaskGetTickCountFromISR();    //进入时统一获取当下时间
+    //  uint32_t now_time = now_tick * portTICK_PERIOD_MS;
+
     if(pin_a == 0 && dev->pin_a_last == 1)  //A相产生下降沿  拧动时才会触发内部
     {
         if(dev->turn_time!=0)   //避免第一次转动时 计算速度会出错
@@ -110,9 +116,7 @@ ecode_state ecode_getstate(ecode_dev * dev)
             dev->turn_time=0;
     }
 
-
-
-    if(pin_d==0 && dev->pin_d_last==1)   //被按下
+   if(pin_d==0 && dev->pin_d_last==1)   //被按下
     {
         //人手速永远达不到让他在2ms内释放 所以nowtime始终会被刷新
         //只要满足“距离上次有效按下已过 25ms（过滤物理抖动）”或“属于开机首次按压”，即判定本次按压有效
@@ -126,7 +130,7 @@ ecode_state ecode_getstate(ecode_dev * dev)
     }
     else if(pin_d==0 && dev->pin_d_last==0)     //0 0的状态会有持续的情况所以做了锁 防止一直触发
     {
-        if(now_time-dev->press_time>=1500 && dev->lock_long==0)  //如果按下时间超过1500ms
+        if(now_time-dev->press_time>= lpress_time && dev->lock_long==0)  //如果按下时间超过1500ms
         {
             dev->lock_long=1;  //锁定
             dev->release_time=now_time;  //记录释放时间
@@ -135,17 +139,18 @@ ecode_state ecode_getstate(ecode_dev * dev)
         }
     }
     else if(pin_d==1 && dev->pin_d_last==0) //上升沿
-    {             
-        if(now_time - dev->press_time >= 500 && now_time- dev->press_time < 1500) //短按
+    {      
+        //这里不需要短按逻辑        
+        /* if(now_time - dev->press_time >= short_press && now_time- dev->press_time < lpress_time) //短按
         {
             sta=short_press;
             dev->record=0;//将连击记录清0
-        }
+        } */
         dev->release_time=now_time;  //记录释放时间
     }
     else if(pin_d==1 && dev->pin_d_last==1) //完全松手时
     {
-        if( now_time - dev->release_time >= 250 && dev->record>0) //如果释放时间超过250ms且记录数大于0 才判断
+        if( now_time - dev->release_time >= multi_click_t && dev->record>0) //如果释放时间超过250ms且记录数大于0 才判断
         {                                                              // 且是当前时间减去用上一次松手时间，而不是松手减按下
             if(dev->record==1)                                         // 要是在250内按下了下一次 则不进行任何操作 进行累计连击记录
             {
@@ -162,11 +167,10 @@ ecode_state ecode_getstate(ecode_dev * dev)
             dev->record=0;
         }
         
-    }
+    } 
     dev->pin_a_last=pin_a;
     dev->pin_b_last=pin_b;
     dev->pin_d_last=pin_d;
-    
     //触发业务函数
     ecode_trigger_event(dev,sta);
     return sta;

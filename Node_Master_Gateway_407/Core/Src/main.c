@@ -22,16 +22,17 @@
 #include "can.h"
 #include "dma.h"
 #include "fatfs.h"
-#include "i2c.h"
 #include "sdio.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_display.h"
-
+#include "ecode.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,16 +99,15 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CAN1_Init();
-  MX_I2C1_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_UART4_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
 
-  app_init(); //应用初始化
 
   /* USER CODE END 2 */
 
@@ -196,6 +196,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM7)
   {
     HAL_IncTick();
+  }
+  if (htim->Instance == TIM6) {
+       extern ecode_dev ecode_one;  
+    ecode_getstate(&ecode_one);
   }
   /* USER CODE BEGIN Callback 1 */
 

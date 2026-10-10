@@ -6,6 +6,7 @@
 #include "integer.h"
 #include "lcdxx_driver.h"
 #include "portmacro.h"
+#include "projdefs.h"
 #include "spi.h"
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
@@ -15,86 +16,44 @@
 #include "function.h"
 #include "FreeRTOSConfig.h"
 #include <stdio.h>
-
-//配合spi的DMA中断
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  if(hspi->Instance==SPI2)
-  {
-     lcd_dma_tx_cplt_handler();
- 
-  }
-}
+#include "ecode.h"
+#include "key.h"
+#include "ds1302.h"
 
 
-lcdxx_dev st7735_one;
-lcdxx_dev st7789_one;
-//spi回调函数
-uint8_t spi_callback(void *spix_t,uint8_t data)
-{
-  uint8_t rx;
-    SPI_HandleTypeDef * spi_obj = (SPI_HandleTypeDef *)spix_t;  //声明类型
-    HAL_SPI_TransmitReceive(spi_obj,&data,&rx,1,100);
-    return rx;
-}
-
-void app_init()
-{
-
-  setvbuf(stdout, NULL, _IONBF, 0); // _IONBF 表示无缓冲 (No Buffer)
-
-    lcdxx_dev_init(&st7735_one, &hspi2, spi_callback,
-                   128, 160, 132, 162, 2, 1,
-                   GPIOD, GPIO_PIN_10,   // RES
-                   GPIOD, GPIO_PIN_9,    // DC
-                   GPIOB, GPIO_PIN_12,   // CS
-                   GPIOD, GPIO_PIN_8);   // BLK
-
-st7735_init(&st7735_one);
-
-    lcdxx_fill(&st7735_one, RED);   // 满屏红
-    HAL_Delay(200);
-     lcdxx_fill(&st7735_one, YELLOW);   // 满屏红
-       HAL_Delay(200);
-      lcdxx_fill(&st7735_one, WHITE);   // 满屏红
-
-
-}
-
+//任务中优先级最高
 void vCont_task(void *argument)
 {
   /* USER CODE BEGIN vCont_task */
+  frtos_app_init();
+    TickType_t now_tick = xTaskGetTickCount();  //获取当前tick
   /* Infinite loop */
   for(;;)
   {
-    osDelay(10000);
+
+
+    extern key_t key[4];
+    key_scan(key,4);
+//    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    vTaskDelayUntil(&now_tick, pdMS_TO_TICKS(20)); //绝对延时阻塞
   }
   /* USER CODE END vCont_task */
 
 }
 
-void UI_display_task(void *argument)
+void vUI_task(void *argument)
 {
   /* USER CODE BEGIN UI_display_task */
   /* 屏幕已在 app_init() 初始化，这里只负责绘制 */
   /* Infinite loop */
+  TickType_t now_tick = xTaskGetTickCount();  //获取当前tick
   for(;;)
   {
-        HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8); // 心跳 LED
-
-        lcdxx_dma_async_fill(&st7735_one, RED);
-        lcdxx_show_chinese(&st7735_one, 0, line1, "孙大王", RED, WHITE);
-        
-        osDelay(100);
-
-        lcdxx_dma_async_fill(&st7735_one, YELLOW);
-        osDelay(1000);
-
-        lcdxx_dma_async_fill(&st7735_one, BLUE);
-        osDelay(1000);
-
-        lcdxx_dma_async_fill(&st7735_one, 0xf8f8);
-        osDelay(1000);
+      // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8); // 心跳 LED
+      Ds1302_Update_Time(&ds1302_one);  //更新ds1302对象数据
+      s_printf("date:20%d-%d-%d\n\t%d-%d-%d | 周%d",ds1302_one.time_data.year,ds1302_one.time_data.mon,ds1302_one.time_data.day,
+      ds1302_one.time_data.hour,ds1302_one.time_data.min,ds1302_one.time_data.sec,ds1302_one.time_data.week);
+       vTaskDelayUntil(&now_tick, pdMS_TO_TICKS(900)); //绝对延时阻塞
   }
   /* USER CODE END UI_display_task */
 }
@@ -106,8 +65,8 @@ void UI_display_task(void *argument)
     FIL file_one;   //定义文件句柄 字节过大不可放入task中 容易撑爆栈内存 有几百字节 
 
 
-char tfread_buffer[128] = {0}; //tf卡读取 接收缓冲区（确保清零）
-void data_acquire(void *argument)
+char tfread_buffer[128] __attribute__((aligned(4)))= {0}; //tf卡读取 接收缓冲区（确保清零） 注意内存对齐
+void vData_task(void *argument)
 {
   /* USER CODE BEGIN data_acquire */
    
@@ -147,17 +106,20 @@ void data_acquire(void *argument)
   /* USER CODE END data_acquire */
 }
 
-
-void vprocess_task(void *argument)
+/*
+10.6号 要将 各个写入的方式文件打开方式 以及文件指针 文件系统搞定；  √
+不卡bug的情况下 将ec11消息队列完成          
+*/
+void vProcess_task(void *argument)
 {
   /* USER CODE BEGIN vprocess_task */
-   uartmux_init();
+
   /* Infinite loop */
   for(;;)
   {
-    // extern osThreadId_t UI_TaskHandle, Receive_TaskHandle;
-    // UBaseType_t f_stack = uxTaskGetStackHighWaterMark( Receive_TaskHandle);
-  //  s_printf("ui_task %lu 字 ",f_stack);
+    extern osThreadId_t Cont_TaskHandle;
+    UBaseType_t f_stack = uxTaskGetStackHighWaterMark(Cont_TaskHandle);
+   s_printf("vcont_task %lu 字 ",f_stack);
     osDelay(1000);
   }
   /* USER CODE END vprocess_task */

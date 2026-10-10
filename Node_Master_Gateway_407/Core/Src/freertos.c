@@ -61,10 +61,10 @@ const osThreadAttr_t UI_Task_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for Receive_Task */
-osThreadId_t Receive_TaskHandle;
-const osThreadAttr_t Receive_Task_attributes = {
-  .name = "Receive_Task",
+/* Definitions for Data_Task */
+osThreadId_t Data_TaskHandle;
+const osThreadAttr_t Data_Task_attributes = {
+  .name = "Data_Task",
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
@@ -75,6 +75,11 @@ const osThreadAttr_t Process_Task_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for Ec11_Queue */
+osMessageQueueId_t Ec11_QueueHandle;
+const osMessageQueueAttr_t Ec11_Queue_attributes = {
+  .name = "Ec11_Queue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -82,9 +87,9 @@ const osThreadAttr_t Process_Task_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void vCont_task(void *argument);
-void UI_display_task(void *argument);
-void data_acquire(void *argument);
-void vprocess_task(void *argument);
+void vUI_task(void *argument);
+void vData_task(void *argument);
+void vProcess_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -130,6 +135,10 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of Ec11_Queue */
+  Ec11_QueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &Ec11_Queue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -139,13 +148,13 @@ void MX_FREERTOS_Init(void) {
   Cont_TaskHandle = osThreadNew(vCont_task, NULL, &Cont_Task_attributes);
 
   /* creation of UI_Task */
-  UI_TaskHandle = osThreadNew(UI_display_task, NULL, &UI_Task_attributes);
+  UI_TaskHandle = osThreadNew(vUI_task, NULL, &UI_Task_attributes);
 
-  /* creation of Receive_Task */
-  Receive_TaskHandle = osThreadNew(data_acquire, NULL, &Receive_Task_attributes);
+  /* creation of Data_Task */
+  Data_TaskHandle = osThreadNew(vData_task, NULL, &Data_Task_attributes);
 
   /* creation of Process_Task */
-  Process_TaskHandle = osThreadNew(vprocess_task, NULL, &Process_Task_attributes);
+  Process_TaskHandle = osThreadNew(vProcess_task, NULL, &Process_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -175,58 +184,58 @@ __weak void vCont_task(void *argument)
   /* USER CODE END vCont_task */
 }
 
-/* USER CODE BEGIN Header_UI_display_task */
+/* USER CODE BEGIN Header_vUI_task */
 /**
 * @brief Function implementing the UI_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_UI_display_task */
-__weak void UI_display_task(void *argument)
+/* USER CODE END Header_vUI_task */
+__weak void vUI_task(void *argument)
 {
-  /* USER CODE BEGIN UI_display_task */
+  /* USER CODE BEGIN vUI_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END UI_display_task */
+  /* USER CODE END vUI_task */
 }
 
-/* USER CODE BEGIN Header_data_acquire */
+/* USER CODE BEGIN Header_vData_task */
 /**
-* @brief Function implementing the Receive_Task thread.
+* @brief Function implementing the Data_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_data_acquire */
-__weak void data_acquire(void *argument)
+/* USER CODE END Header_vData_task */
+__weak void vData_task(void *argument)
 {
-  /* USER CODE BEGIN data_acquire */
+  /* USER CODE BEGIN vData_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END data_acquire */
+  /* USER CODE END vData_task */
 }
 
-/* USER CODE BEGIN Header_vprocess_task */
+/* USER CODE BEGIN Header_vProcess_task */
 /**
 * @brief Function implementing the Process_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_vprocess_task */
-__weak void vprocess_task(void *argument)
+/* USER CODE END Header_vProcess_task */
+__weak void vProcess_task(void *argument)
 {
-  /* USER CODE BEGIN vprocess_task */
+  /* USER CODE BEGIN vProcess_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END vprocess_task */
+  /* USER CODE END vProcess_task */
 }
 
 /* Private application code --------------------------------------------------*/

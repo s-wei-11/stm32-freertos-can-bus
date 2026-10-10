@@ -23,7 +23,7 @@ typedef enum{
     key_single_click=0,
     key_double_click,
     key_triple_click,
-    //key_short_press,  //短按
+    key_short_press,  //短按
     key_long_press,
     key_none
 }key_state;
